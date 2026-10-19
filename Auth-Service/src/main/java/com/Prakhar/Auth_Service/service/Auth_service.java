@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class Auth_service {
@@ -36,8 +37,43 @@ public class Auth_service {
 
     private static final String CONNECTION_NAME = "Username-Password-Authentication";
 
+    /** Where the "Set password" link in the welcome email sends the user afterwards (the frontend). */
+    @Value("${app.frontend-url:http://localhost:5173/}")
+    private String frontendUrl;
+
+    /**
+     * LOCAL MODE: if no Auth0 client secret is configured (e.g. on your laptop),
+     * we skip Auth0 completely and just make up a local user id.
+     * Everything else (Kafka welcome email, account creation) still runs.
+     */
+    private boolean isLocalMode() {
+        return clientSecret == null || clientSecret.isBlank();
+    }
+
+    private String createLocalUser(UserRequest userRequest) {
+        // No "|" in the id (unlike Auth0's "auth0|..."), so it can be used directly in URLs
+        String localUserId = "local-" + UUID.randomUUID();
+        System.out.println("[LOCAL MODE] Auth0 skipped. Created local user " + localUserId + " for " + userRequest.getEmail());
+
+        try {
+            UserEvent event = new UserEvent();
+            event.setEmail(userRequest.getEmail());
+            event.setUsername(userRequest.getFirstName() + " " + userRequest.getLastName());
+            event.setUserId(localUserId);
+            event.setResetLink(frontendUrl);
+            event.setEventType("USER_CREATED");
+            kafkaTemplate.send("user-events", event);
+        } catch (Exception e) {
+            System.err.println("[LOCAL MODE] User created but Kafka message failed: " + e.getMessage());
+        }
+        return localUserId;
+    }
+
     public String createUserInAuth0(UserRequest userRequest) {
         System.err.println("AUTH-SERVICE CALLED FOR EMAIL: " + userRequest.getEmail());
+        if (isLocalMode()) {
+            return createLocalUser(userRequest);
+        }
         try {
             // 1. Get Admin Token
             AuthAPI authAPI = new AuthAPI(domain, clientId, clientSecret);
@@ -109,7 +145,7 @@ public class Auth_service {
             PasswordChangeTicket ticketRequest =
                     new PasswordChangeTicket(userId);
 
-            ticketRequest.setResultUrl("http://192.168.29.42:5173/"); // वापस डैशबोर्ड पर आए
+            ticketRequest.setResultUrl(frontendUrl); // वापस डैशबोर्ड पर आए
             ticketRequest.setTTLSeconds(86400); // 24 घंटे की वैलिडिटी
 
             // 4. Auth0 से Ticket मांगो

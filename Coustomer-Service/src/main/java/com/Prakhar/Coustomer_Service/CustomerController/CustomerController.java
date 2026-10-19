@@ -60,11 +60,15 @@ public class CustomerController {
         }
 
     @GetMapping("/me")
-    public ResponseEntity<CustomerResponse> getMyProfile(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<CustomerResponse> getMyProfile(@AuthenticationPrincipal Jwt jwt,
+                                                         @RequestHeader(value = "X-User-Id", required = false) String localUserId) {
 
-
-
-        String auth0Id = jwt.getSubject();
+        // Normal (Auth0) mode: the user id comes from the verified JWT.
+        // Local mode (security off): there is no JWT, so pass the id in an "X-User-Id" header instead.
+        String auth0Id = (jwt != null) ? jwt.getSubject() : localUserId;
+        if (auth0Id == null || auth0Id.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         CustomerResponse customerResponse = customer_service.getCustomer(auth0Id);
 

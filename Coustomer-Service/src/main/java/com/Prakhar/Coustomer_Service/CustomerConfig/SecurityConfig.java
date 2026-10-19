@@ -1,6 +1,7 @@
 package com.Prakhar.Coustomer_Service.CustomerConfig;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,8 +13,24 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /**
+     * true  (default) -> every request except signup needs an Auth0 JWT ("Bearer ..." header).
+     * false (local)   -> everything is open, so you can test with Postman/curl without Auth0.
+     * Set with the SECURITY_ENABLED environment variable.
+     */
+    @Value("${app.security.enabled:true}")
+    private boolean securityEnabled;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        if (!securityEnabled) {
+            System.out.println("[LOCAL MODE] Security is OFF - all endpoints are open, no JWT needed.");
+            http.csrf(csrf -> csrf.disable())
+                    .cors(cors -> cors.disable())
+                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            return http.build();
+        }
+
         http
                 // 1. CSRF disable rehna chahiye kyunki hum API bana rahe hain
                 .csrf(csrf -> csrf.disable())

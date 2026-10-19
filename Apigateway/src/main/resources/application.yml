@@ -7,51 +7,56 @@ spring:
 
   cloud:
     gateway:
-
+      # Every request to http://localhost:9090/<service-name>/... is forwarded to that service,
+      # with the first path segment removed (StripPrefix=1).
+      # e.g.  /customer-service/api/v1/customers  ->  http://localhost:8081/api/v1/customers
+      # ${VAR:default} = env var, falling back to the localhost default.
       routes:
         - id: auth-service-route
-          uri: ${AUTH_SERVICE_URL}
+          uri: ${AUTH_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/auth-service/**
           filters:
             - StripPrefix=1
 
         - id: customer-service-route
-          uri: ${CUSTOMER_SERVICE_URL}
+          uri: ${CUSTOMER_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/customer-service/**
           filters:
             - StripPrefix=1
 
         - id: accounts-service-route
-          uri: ${ACCOUNTS_SERVICE_URL}
+          uri: ${ACCOUNTS_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/accounts-service/**
           filters:
             - StripPrefix=1
 
         - id: payment-service-route
-          uri: ${PAYMENT_SERVICE_URL}
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/payment-service/**
           filters:
             - StripPrefix=1
 
         - id: notification-service-route
-          uri: ${NOTIFICATION_SERVICE_URL}
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/notification-service/**
           filters:
             - StripPrefix=1
 
-# 🔥 Eureka
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL}
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
 
 logging:
   level:
-    org.springframework.cloud.gateway: TRACE
+    root: WARN
+    com.Prakhar: INFO
+    # Change to DEBUG/TRACE to see every request the gateway routes
+    org.springframework.cloud.gateway: INFO

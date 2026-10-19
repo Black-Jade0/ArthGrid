@@ -21,48 +21,58 @@ import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 @Configuration
 public class KafkaConsumerConfig {
 
+    /**
+     * Two modes, picked automatically from environment variables:
+     *  - Cloud (Aiven): KAFKA_CA_CERT, KAFKA_ACCESS_CERT and KAFKA_ACCESS_KEY are set -> SSL.
+     *  - Local: those are not set -> plain connection to KAFKA_URL (default localhost:9092).
+     */
     private Map<String, Object> getCommonConfig() {
 
-        String ca = System.getenv("KAFKA_CA_CERT").replace("\\n", "\n");
-        String cert = System.getenv("KAFKA_ACCESS_CERT").replace("\\n", "\n");
-        String key = System.getenv("KAFKA_ACCESS_KEY").replace("\\n", "\n");
+        String kafkaUrl = envOrDefault("KAFKA_URL", "localhost:9092");
+        String ca = System.getenv("KAFKA_CA_CERT");
+        String cert = System.getenv("KAFKA_ACCESS_CERT");
+        String key = System.getenv("KAFKA_ACCESS_KEY");
 
         Map<String, Object> config = new HashMap<>();
 
         // Kafka Server
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                System.getenv("KAFKA_URL"));
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
 
         // Group Id
-        config.put(ConsumerConfig.GROUP_ID_CONFIG,
-                "notification-group-v7");
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-group-v7");
 
-        // Offset
-        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-                "latest");
+        // A brand-new consumer group reads from the beginning, so no event is missed
+        // if this service starts after someone already registered / paid.
+        // (Existing groups keep their saved position, so this is safe in the cloud too.)
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        // SSL
-        config.put("security.protocol", "SSL");
+        boolean useSsl = isSet(ca) && isSet(cert) && isSet(key);
+        if (useSsl) {
+            config.put("security.protocol", "SSL");
+            config.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+            config.put(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, pem(ca));
+            config.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+            config.put(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, pem(cert));
+            config.put(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, pem(key));
+            config.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "https");
+        }
 
-        config.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
-        config.put(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, ca);
-
-        config.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
-        config.put(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, cert);
-
-        config.put(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, key);
-
-        config.put(
-                SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG,
-                "https"
-        );
-
-
-
+        System.out.println("Kafka consumer -> " + kafkaUrl + (useSsl ? " (SSL)" : " (plaintext, local mode)"));
         return config;
     }
 
+    private static String pem(String value) {
+        return value.replace("\\n", "\n").trim();
+    }
 
+    private static boolean isSet(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private static String envOrDefault(String name, String fallback) {
+        String value = System.getenv(name);
+        return isSet(value) ? value : fallback;
+    }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, UserEvent>
