@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  # 1. Database (MySQL)
+  mysql-db:
+    image: mysql:8.0
+    container_name: bank-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: Prakhar@456
+    command: --init-file /data/application/init.sql
+    volumes:
+      - ./init.sql:/data/application/init.sql
+    networks:
+      - bank-network
+
+  # 2. Service Discovery (Eureka)
+  eureka-server:
+    build: ./Service_Registry # सुनिश्चित करें कि फोल्डर का नाम यही है
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - bank-network
+
+  # 3. Messaging (Kafka & Zookeeper)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: bank-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - bank-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: bank-zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    networks:
+      - bank-network
+
+  # 4. API Gateway
+  api-gateway:
+    build: ./Apigateway
+    container_name: api-gateway
+    ports:
+      - "9090:9090"
+    depends_on:
+      - eureka-server
+    networks:
+      - bank-network
+
+  # 5. Business Services
+  auth-service:
+    build: ./Auth-Service
+    container_name: auth-service
+    depends_on:
+      - mysql-db
+      - eureka-server
+      - kafka
+    networks:
+      - bank-network
+
+  customer-service:
+    build: ./Coustomer-Service
+    container_name: customer-service
+    depends_on:
+      - mysql-db
+      - eureka-server
+    networks:
+      - bank-network
+
+  accounts-service:
+    build: ./Accounts-Service
+    container_name: accounts-service
+    depends_on:
+      - mysql-db
+      - eureka-server
+    networks:
+      - bank-network
+
+  payment-service:
+    build: ./Payment-Service
+    container_name: payment-service
+    depends_on:
+      - mysql-db
+      - kafka
+      - eureka-server
+    networks:
+      - bank-network
+
+  notification-service:
+    build: ./Notification-service
+    container_name: notification-service
+    depends_on:
+      - mysql-db
+      - kafka
+      - eureka-server
+    networks:
+      - bank-network
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8090:8090"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: bank-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      SERVER_PORT: 8090
+    depends_on:
+      - kafka
+    networks:
+      - bank-network
+
+networks:
+  bank-network:
+    driver: bridge

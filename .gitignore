@@ -1,0 +1,15 @@
+# Sensitive files
+.env
+
+# IntelliJ files
+.idea/
+*.iml
+out/
+
+# Build files
+target/
+bin/
+
+# OS files
+.DS_Store
+Thumbs.db

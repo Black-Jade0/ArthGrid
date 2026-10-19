@@ -1,0 +1,57 @@
+server:
+  port: ${PORT:9090}
+
+spring:
+  application:
+    name: API-GATEWAY
+
+  cloud:
+    gateway:
+
+      routes:
+        - id: auth-service-route
+          uri: ${AUTH_SERVICE_URL}
+          predicates:
+            - Path=/auth-service/**
+          filters:
+            - StripPrefix=1
+
+        - id: customer-service-route
+          uri: ${CUSTOMER_SERVICE_URL}
+          predicates:
+            - Path=/customer-service/**
+          filters:
+            - StripPrefix=1
+
+        - id: accounts-service-route
+          uri: ${ACCOUNTS_SERVICE_URL}
+          predicates:
+            - Path=/accounts-service/**
+          filters:
+            - StripPrefix=1
+
+        - id: payment-service-route
+          uri: ${PAYMENT_SERVICE_URL}
+          predicates:
+            - Path=/payment-service/**
+          filters:
+            - StripPrefix=1
+
+        - id: notification-service-route
+          uri: ${NOTIFICATION_SERVICE_URL}
+          predicates:
+            - Path=/notification-service/**
+          filters:
+            - StripPrefix=1
+
+# 🔥 Eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
