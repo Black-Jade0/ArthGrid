@@ -1,0 +1,442 @@
+{
+  "info": {
+    "name": "ArthGrid (local)",
+    "description": "Run in order (or use Run collection). Requires `docker compose up --build`. Emails show up at http://localhost:8025",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Sign up customer A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/customer-service/api/v1/customers",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "customer-service",
+            "api",
+            "v1",
+            "customers"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Asha\",\n  \"lastName\": \"Verma\",\n  \"email\": \"asha{{ts}}@example.com\",\n  \"phone\": \"9000000001\",\n  \"address\": \"Bhopal\",\n  \"externalId\": \"signup-a-{{ts}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('ts', Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const r = pm.response.json();",
+              "pm.test('account created', () => pm.expect(r.accountNumber).to.be.a('string'));",
+              "pm.collectionVariables.set('accA', r.accountNumber);",
+              "pm.collectionVariables.set('userA', r.externalId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Sign up customer B",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/customer-service/api/v1/customers",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "customer-service",
+            "api",
+            "v1",
+            "customers"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Ravi\",\n  \"lastName\": \"Kumar\",\n  \"email\": \"ravi{{ts}}@example.com\",\n  \"phone\": \"9000000002\",\n  \"address\": \"Indore\",\n  \"externalId\": \"signup-b-{{ts}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const r = pm.response.json();",
+              "pm.test('account created', () => pm.expect(r.accountNumber).to.be.a('string'));",
+              "pm.collectionVariables.set('accB', r.accountNumber);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Deposit 5000 into A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/accounts-service/api/v1/accounts/deposit",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "accounts-service",
+            "api",
+            "v1",
+            "accounts",
+            "deposit"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountNumber\": \"{{accA}}\",\n  \"amount\": 5000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Transfer 1000 A -> B",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/payment-service/api/v1/payments/transfer",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "payment-service",
+            "api",
+            "v1",
+            "payments",
+            "transfer"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceAccountNumber\": \"{{accA}}\",\n  \"targetAccountNumber\": \"{{accB}}\",\n  \"amount\": 1000,\n  \"billerName\": \"Transfer to Ravi\",\n  \"email\": \"asha{{ts}}@example.com\",\n  \"targetEmail\": \"ravi{{ts}}@example.com\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('SUCCESS', () => pm.expect(pm.response.json().status).to.eql('SUCCESS'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Pay electricity bill from A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/payment-service/api/v1/payments/bill",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "payment-service",
+            "api",
+            "v1",
+            "payments",
+            "bill"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceAccountNumber\": \"{{accA}}\",\n  \"amount\": 500,\n  \"billerName\": \"MP Electricity\",\n  \"billReferenceNumber\": \"EB-{{ts}}\",\n  \"email\": \"asha{{ts}}@example.com\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('SUCCESS', () => pm.expect(pm.response.json().status).to.eql('SUCCESS'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Get account A",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/accounts-service/api/v1/accounts/{{accA}}",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "accounts-service",
+            "api",
+            "v1",
+            "accounts",
+            "{{accA}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Get account B",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/accounts-service/api/v1/accounts/{{accB}}",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "accounts-service",
+            "api",
+            "v1",
+            "accounts",
+            "{{accB}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Statement of A",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/accounts-service/api/v1/accounts/{{accA}}/transactions?page=0&size=5",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "accounts-service",
+            "api",
+            "v1",
+            "accounts",
+            "{{accA}}",
+            "transactions"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "9. Withdraw 200 from A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/accounts-service/api/v1/accounts/withdraw",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "accounts-service",
+            "api",
+            "v1",
+            "accounts",
+            "withdraw"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountNumber\": \"{{accA}}\",\n  \"amount\": 200\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "10. My profile (local mode)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "{{userA}}"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/customer-service/api/v1/customers/me",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "customer-service",
+            "api",
+            "v1",
+            "customers",
+            "me"
+          ]
+        }
+      }
+    },
+    {
+      "name": "11. Get customer by id",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gateway}}/customer-service/api/v1/customers/{{userA}}",
+          "host": [
+            "{{gateway}}"
+          ],
+          "path": [
+            "customer-service",
+            "api",
+            "v1",
+            "customers",
+            "{{userA}}"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "gateway",
+      "value": "http://localhost:9090"
+    },
+    {
+      "key": "ts",
+      "value": ""
+    },
+    {
+      "key": "accA",
+      "value": ""
+    },
+    {
+      "key": "accB",
+      "value": ""
+    },
+    {
+      "key": "userA",
+      "value": ""
+    }
+  ]
+}
