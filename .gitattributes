@@ -1,0 +1,7 @@
+# Keep Linux line endings for files that run inside Docker / bash, even when cloned on Windows
+*.sh    text eol=lf
+mvnw    text eol=lf
+*.sql   text eol=lf
+*.yml   text eol=lf
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf

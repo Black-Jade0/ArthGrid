@@ -70,11 +70,37 @@ flowchart LR
 
 You only need **Docker Desktop**. No Java, no Maven, no MySQL install, no Auth0/Gmail/Aiven accounts.
 
-> Give Docker at least **6 GB RAM** (Docker Desktop → Settings → Resources). It runs 7 JVMs + MySQL + Kafka.
+> The stack runs 7 JVMs + MySQL + Kafka, so it wants roughly **6 GB of free RAM** (an 8 GB laptop works if you close other apps; 16 GB is comfortable).
+
+### Installing Docker Desktop on Windows (one-time)
+
+1. **Install WSL 2** (the Linux layer Docker uses). Open **PowerShell as Administrator** and run:
+   ```powershell
+   wsl --install
+   ```
+   Restart the laptop when it asks. (If it says WSL is already installed, run `wsl --update` instead.)
+2. **Install Docker Desktop**: download it from https://www.docker.com/products/docker-desktop/ , run the installer,
+   keep **"Use WSL 2 instead of Hyper-V"** ticked, and restart/log out if asked.
+3. **Start Docker Desktop** from the Start menu and wait until it says **Engine running** (green, bottom-left).
+   It has to be running whenever you use the project.
+4. **Check it** in a *new* PowerShell window:
+   ```powershell
+   docker --version
+   docker compose version
+   docker run hello-world
+   ```
+   If `hello-world` prints "Hello from Docker!", you're set.
+
+If Docker complains that **virtualization is disabled**, turn on *Intel VT-x* / *AMD-V (SVM)* in your laptop's BIOS
+(usually F2/F10/Del at boot, under "Advanced" or "CPU configuration"). Task Manager → Performance → CPU shows
+"Virtualization: Enabled" when it's on.
+
+### Start the project
 
 ```bash
 git clone https://github.com/Black-Jade0/ArthGrid.git
 cd ArthGrid
+git checkout local-setup    # until PR #1 is merged into main
 docker compose up --build
 ```
 
@@ -137,6 +163,10 @@ Use this when you want to edit Java code and restart quickly. Needs **JDK 21**.
 **Quickest:** with everything running, in another terminal:
 
 ```bash
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File scripts\smoke-test.ps1
+
+# Mac / Linux / Git Bash
 bash scripts/smoke-test.sh
 ```
 
@@ -351,7 +381,9 @@ Nothing to switch manually — the code picks the mode from environment variable
 | A service keeps restarting | `docker compose logs <service>`; usually MySQL wasn't ready yet — it retries by itself |
 | Smoke test fails at step 1 right after startup | Wait 30–60 s for all services to finish starting, then retry |
 | Build fails downloading Maven stuff | Network hiccup; re-run `docker compose up --build` |
-| Containers get killed / laptop freezes | Give Docker more RAM, or lower `-Xmx256m` in `docker-compose.yml` |
+| Containers get killed / laptop freezes | Close other apps, or lower `-Xmx256m` to `-Xmx200m` in `docker-compose.yml`. On Windows, Docker gets its memory through WSL; you can raise the cap with a `C:\Users\<you>\.wslconfig` file containing `[wsl2]` and `memory=6GB`, then `wsl --shutdown` |
+| `docker` is not recognized (Windows) | Docker Desktop isn't installed or isn't running — see "Installing Docker Desktop on Windows" above, then open a new terminal |
+| Docker Desktop stuck on "Starting the Docker Engine" | Run `wsl --update` in an admin PowerShell, restart the laptop, and make sure virtualization is enabled in BIOS |
 | No emails in Mailpit | Check `docker compose logs notification-service` and the topics in Kafka UI |
 | "Email already Exists" on sign-up | Use a different email (or `docker compose down -v` to wipe data) |
 | Want a clean slate | `docker compose down -v` |
