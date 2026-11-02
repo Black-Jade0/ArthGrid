@@ -218,19 +218,7 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
-      adminer:
-    # Database viewer in the browser: http://localhost:8091
-    # Login -> System: MySQL, Server: mysql-db, Username: root, Password: root
-    image: adminer:latest
-    container_name: adminer
-    ports:
-      - "8091:8080"
-    environment:
-      ADMINER_DEFAULT_SERVER: mysql-db
-    depends_on:
-      - mysql-db
-
-  mailpit:
+      mailpit:
         condition: service_started
       eureka-server:
         condition: service_started
