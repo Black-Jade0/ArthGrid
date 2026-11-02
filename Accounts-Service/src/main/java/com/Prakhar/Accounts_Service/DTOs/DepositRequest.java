@@ -10,4 +10,5 @@ public class DepositRequest {
 
     private String accountNumber;
     private BigDecimal amount;
+    private String description;   // optional, shown in the statement (e.g. "Received from Asha Verma")
 }

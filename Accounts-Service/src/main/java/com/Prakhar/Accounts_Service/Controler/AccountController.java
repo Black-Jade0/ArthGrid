@@ -29,7 +29,7 @@ public class AccountController {
     @PostMapping("/deposit")
     public ResponseEntity<AccountResponse> depositMoney(@RequestBody DepositRequest depositRequest)
     {
-        AccountResponse response=accountService.deposit(depositRequest.getAccountNumber(),depositRequest.getAmount());
+        AccountResponse response=accountService.deposit(depositRequest.getAccountNumber(),depositRequest.getAmount(),depositRequest.getDescription());
         return ResponseEntity.ok(response);
 
     }

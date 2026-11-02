@@ -10,6 +10,7 @@
 #   Kafka UI                http://localhost:8090
 #   Mailpit (fake inbox)    http://localhost:8025   <- all emails the app "sends" land here
 #   MySQL                   localhost:3307  user: root  password: root
+#   Frontend (the website)  http://localhost:5173
 #   Services (direct)       8081 customer, 8082 auth, 8083 accounts, 8084 payment, 8085 notification
 #
 # Local mode = no Auth0, no Aiven Kafka, no Gmail needed. See README.md.
@@ -122,6 +123,7 @@ services:
     environment:
       <<: *spring-env
       KAFKA_URL: kafka:29092
+      FRONTEND_URL: http://localhost:5173/   # link in the welcome email
       # AUTH0_CLIENT_SECRET is intentionally NOT set -> local mode (no Auth0)
     depends_on:
       - eureka-server
@@ -190,10 +192,14 @@ services:
       <<: [*spring-env, *db-env]
       DB_NAME: notification_db
       KAFKA_URL: kafka:29092
-      MAIL_HOST: mailpit              # fake inbox instead of Gmail
-      MAIL_PORT: "1025"
-      MAIL_SMTP_AUTH: "false"
-      MAIL_STARTTLS: "false"
+      # Real emails: fill in the .env file (see .env.example) with your Gmail + App Password.
+      # If .env is empty/missing, emails go to the fake Mailpit inbox (http://localhost:8025) instead.
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
+      MAIL_USERNAME: ${MAIL_USERNAME:-arthgrid@localhost}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -204,6 +210,16 @@ services:
       eureka-server:
         condition: service_started
     restart: on-failure
+
+  # ---------- Frontend ----------
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:80"        # open http://localhost:5173
+    depends_on:
+      - api-gateway
 
 volumes:
   mysql-data:

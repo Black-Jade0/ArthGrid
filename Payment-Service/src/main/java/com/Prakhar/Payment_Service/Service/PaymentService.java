@@ -36,12 +36,26 @@ public class PaymentService {
                 .build();
         paymentRepository.save(payment);
 
+        boolean holdCaptured = false;
         try {
+            // Basic checks before touching any money
+            if (paymentRequest.getAmount() == null || paymentRequest.getAmount().signum() <= 0) {
+                throw new RuntimeException("Amount must be more than 0");
+            }
+            if (paymentRequest.getSourceAccountNumber() != null
+                    && paymentRequest.getSourceAccountNumber().equals(paymentRequest.getTargetAccountNumber())) {
+                throw new RuntimeException("You cannot send money to your own account");
+            }
+            boolean isTransfer = paymentRequest.getTargetAccountNumber() != null && !paymentRequest.getTargetAccountNumber().isEmpty();
+            String holdText = isTransfer
+                    ? "Sent to " + (paymentRequest.getTargetName() != null ? paymentRequest.getTargetName() : paymentRequest.getTargetAccountNumber())
+                    : "Bill: " + paymentRequest.getBillerName();
+
             //  HOLD MONEY (Source Account) - Ye sabke liye same rahega
             HoldRequest holdRequest = HoldRequest.builder()
                     .accountNumber(paymentRequest.getSourceAccountNumber())
                     .amount(paymentRequest.getAmount())
-                    .description("Transaction: " + paymentRequest.getBillerName()) // Description thoda generic kar diya
+                    .description(holdText)
                     .referenceId(transactionId)
                     .build();
 
@@ -50,17 +64,24 @@ public class PaymentService {
             paymentRepository.save(payment);
 
             //  CHECK - Transfer hai ya Bill Payment?
-            if (paymentRequest.getTargetAccountNumber() != null && !paymentRequest.getTargetAccountNumber().isEmpty()) {
+            if (isTransfer) {
 
                 // ================= CASE A: TRANSFER (Paisa Bhejna) =================
 
-                // 2. Target account mein paisa daalo (Deposit)
-                // Note: Iske liye DepositRequest DTO aur Client mein method hona chahiye
-                DepositRequest depositReq = new DepositRequest(paymentRequest.getTargetAccountNumber(), paymentRequest.getAmount());
-                accountsClient.deposit(depositReq);
-
-                // 1. Source se paisa pakka kato (Capture)
+                // 1. Source se paisa pakka kato (Capture) - FIRST, so money can never be created out of thin air
                 accountsClient.captureHold(transactionId);
+                holdCaptured = true;
+
+                // 2. Target account mein paisa daalo (Deposit)
+                String receivedText = "Received from " + (paymentRequest.getSenderName() != null ? paymentRequest.getSenderName() : paymentRequest.getSourceAccountNumber());
+                DepositRequest depositReq = new DepositRequest(paymentRequest.getTargetAccountNumber(), paymentRequest.getAmount(), receivedText);
+                try {
+                    accountsClient.deposit(depositReq);
+                } catch (Exception depositError) {
+                    // Hold is already captured, so put the money back into the sender's account
+                    accountsClient.deposit(new DepositRequest(paymentRequest.getSourceAccountNumber(), paymentRequest.getAmount(), "Refund: transfer failed"));
+                    throw depositError;
+                }
 
 
 
@@ -94,6 +115,8 @@ public class PaymentService {
                     .email(paymentRequest.getEmail())
                     .targetEmail(paymentRequest.getTargetEmail())
                     .targetAccountNumber(paymentRequest.getTargetAccountNumber())
+                    .senderName(paymentRequest.getSenderName())
+                    .targetName(paymentRequest.getTargetName())
                     .build();
 
             kafkaTemplate.send("payment-events", transactionId, event);
@@ -101,7 +124,9 @@ public class PaymentService {
 
         } catch (Exception e) {
             // ERROR HANDLING (Hold Release karna)
-            if (payment.getStatus() == Status.PENDING) {
+            if (holdCaptured) {
+                payment.setReason("Failed: " + e.getMessage() + " -> money refunded to sender");
+            } else if (payment.getStatus() == Status.PENDING) {
                 System.out.println("Releasing Hold due to error: " + e.getMessage());
                 try {
                     accountsClient.releaseHold(transactionId);

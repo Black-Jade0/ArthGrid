@@ -23,4 +23,6 @@ public class PaymentEvent {
     private String email;
     private String targetEmail;
     private String targetAccountNumber;
+    private String senderName;
+    private String targetName;
 }

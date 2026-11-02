@@ -32,13 +32,19 @@ public class NotificationConsumer {
         // --- 1. SENDER EMAIL (Debit Alert) ---
         if (event.getEmail() != null && !event.getEmail().isEmpty()) {
 
-            String subject = "Payment Update: " + event.getStatus();
+            boolean isTransfer = event.getTargetAccountNumber() != null && !event.getTargetAccountNumber().isEmpty();
+            String subject = isTransfer
+                    ? "Debit Alert: Rs. " + event.getAmount() + " sent" + (event.getTargetName() != null ? " to " + event.getTargetName() : "")
+                    : "Payment Update: " + event.getStatus();
 
-            // HTML Styling added for Premium Look
-            String body = "Hello User,\n\n" +
-                    "Your payment of <b>Rs. " + event.getAmount() + "</b> for <b>" + event.getBillerName() + "</b> was <b style='color:blue'>" + event.getStatus() + "</b>.\n" +
+            String body = "Hello " + (event.getSenderName() != null ? "<b>" + event.getSenderName() + "</b>" : "User") + ",\n\n" +
+                    (isTransfer
+                        ? "Your account <b>" + event.getSourceAccountNumber() + "</b> has been <b style='color:#dc2626'>DEBITED</b> with <b>Rs. " + event.getAmount() + "</b>.\n" +
+                          "Sent to: <b>" + (event.getTargetName() != null ? event.getTargetName() : "") + "</b> (A/c " + event.getTargetAccountNumber() + ")\n"
+                        : "Your payment of <b>Rs. " + event.getAmount() + "</b> for <b>" + event.getBillerName() + "</b> was <b style='color:blue'>" + event.getStatus() + "</b>.\n") +
                     "Transaction ID: <span style='font-family:monospace; background:#eee; padding:2px;'>" + event.getTransactionId() + "</span>\n\n" +
-                    "Regards,\nAgrawal Bank";
+                    "<i style='color:#666; font-size:12px;'>This is a demo project - no real money was moved.</i>\n\n" +
+                    "Regards,\nArthGrid Bank";
 
             String email = event.getEmail();
             emailService.sendPaymentNotification(email, subject, body);
@@ -56,14 +62,14 @@ public class NotificationConsumer {
         // --- 2. RECEIVER EMAIL (Credit Alert) ---
         if (event.getTargetEmail() != null && !event.getTargetEmail().isEmpty()) {
 
-            String subject = "Money Received: Credit Alert!";
+            String subject = "Credit Alert: Rs. " + event.getAmount() + " received" + (event.getSenderName() != null ? " from " + event.getSenderName() : "");
 
-            // Green color for Credit alert
-            String body = "Hello User,\n\n" +
+            String body = "Hello " + (event.getTargetName() != null ? "<b>" + event.getTargetName() + "</b>" : "User") + ",\n\n" +
                     "Your account <b>" + event.getTargetAccountNumber() + "</b> has been <b style='color:green'>CREDITED</b> with <b>Rs. " + event.getAmount() + "</b>.\n" +
-                    "Sender Account: " + event.getSourceAccountNumber() + "\n" +
+                    "From: <b>" + (event.getSenderName() != null ? event.getSenderName() : "") + "</b> (A/c " + event.getSourceAccountNumber() + ")\n" +
                     "Transaction ID: <span style='font-family:monospace; background:#eee; padding:2px;'>" + event.getTransactionId() + "</span>\n\n" +
-                    "Enjoy spending!\nAgrawal Bank";
+                    "<i style='color:#666; font-size:12px;'>This is a demo project - no real money was moved.</i>\n\n" +
+                    "Regards,\nArthGrid Bank";
 
             // Email bhejo
             emailService.sendPaymentNotification(event.getTargetEmail(), subject, body);
@@ -86,6 +92,18 @@ public class NotificationConsumer {
         System.out.println("User Event Received: " + event.getEmail());
 
         if ("USER_CREATED".equals(event.getEventType())) {
+
+            if (event.getUserId() != null && event.getUserId().startsWith("local-")) {
+                String localBody = "Hello <b>" + event.getUsername() + "</b>,\n\n" +
+                        "Welcome to ArthGrid! Your account has been created and we've added a <b>Rs. 5000 welcome balance</b> to it.\n\n" +
+                        "Log in with <b>" + event.getEmail() + "</b> and the password you chose at sign-up:\n\n" +
+                        "<div style='margin: 20px 0;'><a href='" + event.getResetLink() + "' style='background-color: #fbbf24; color: #0B1120; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;'>Open ArthGrid</a></div>\n" +
+                        "<i style='color:#666; font-size:12px;'>This is a demo project - balances are only numbers in our database, no real money is involved.</i>\n\n" +
+                        "Regards,\nArthGrid Bank";
+                emailService.sendPaymentNotification(event.getEmail(), "Welcome to ArthGrid!", localBody);
+                System.out.println("Welcome Email Sent to: " + event.getEmail());
+                return;
+            }
 
             String subject = "Welcome to Agrawal Bank!";
             String tempPassword = "Bank@123";

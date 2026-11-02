@@ -13,6 +13,7 @@ import com.Prakhar.Coustomer_Service.repo.CustomerRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -29,6 +30,8 @@ public class Customer_Service {
 
     private AccountClient accountClient;
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     public Customer_Service(CustomerRepository customerRepository, AccountClient accountClient, AuthUserClient authUserClient) {
         this.customerRepository = customerRepository;
         this.accountClient = accountClient;
@@ -42,7 +45,7 @@ public class Customer_Service {
         }
 
         if (customerRepository.existsByEmail(customerRequest.getEmail())) {
-            throw new RuntimeException("Email already Exists" + customerRequest.getEmail());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with this email already exists");
         }
 
         String fingerprint = generateFingerprint(customerRequest);
@@ -57,6 +60,9 @@ public class Customer_Service {
         newcustomer.setActive(true);
         newcustomer.setKycStatus(KycStatus.PENDING);
         newcustomer.setRequestFingerprint(fingerprint);
+        if (customerRequest.getPassword() != null && !customerRequest.getPassword().isBlank()) {
+            newcustomer.setPasswordHash(passwordEncoder.encode(customerRequest.getPassword()));
+        }
 
         Customer savedCustomer = customerRepository.save(newcustomer);
 
@@ -92,6 +98,30 @@ public class Customer_Service {
             throw new RuntimeException("Error generating fingerprint", e);
         }
 
+    }
+
+    /** Frontend login: email + password -> the customer's profile (incl. account number). */
+    public CustomerResponse login(String email, String password) {
+        Customer customer = customerRepository.findByEmailIgnoreCase(email == null ? "" : email.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong email or password"));
+        if (customer.getPasswordHash() == null || password == null
+                || !passwordEncoder.matches(password, customer.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong email or password");
+        }
+        return mapToResponse(customer);
+    }
+
+    /** Find the person you want to send money to, by their email. Returns only what the sender needs. */
+    public CustomerResponse lookupByEmail(String email) {
+        Customer customer = customerRepository.findByEmailIgnoreCase(email == null ? "" : email.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No ArthGrid user with this email"));
+        CustomerResponse r = new CustomerResponse();
+        r.setFirstName(customer.getFirstName());
+        r.setLastName(customer.getLastName());
+        r.setEmail(customer.getEmail());
+        r.setAccountNumber(customer.getAccountNumber());
+        r.setActive(customer.isActive());
+        return r;
     }
 
     public CustomerResponse getCustomer(String externalId) {

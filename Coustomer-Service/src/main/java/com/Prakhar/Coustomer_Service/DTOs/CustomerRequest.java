@@ -2,6 +2,7 @@ package com.Prakhar.Coustomer_Service.DTOs;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 
 
 public class CustomerRequest {
@@ -23,7 +24,19 @@ public class CustomerRequest {
     private String address;
 
     @NotBlank(message = "External ID is required")
-    private String externalId;   // used for checking ki Purani request toh nhi aa gyi phir se;
+    private String externalId;
+
+    // Optional so old clients (Postman, smoke test) still work. The frontend always sends it.
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String password;
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }   // used for checking ki Purani request toh nhi aa gyi phir se;
 
     public String getFirstName() {
         return firstName;

@@ -14,4 +14,6 @@ public class BillPaymentRequest {  //User Bhejega yeh
     private String email;
     private String targetEmail;
     private String targetAccountNumber;
+    private String senderName;   // optional, used in statement text + emails
+    private String targetName;   // optional, used in statement text + emails
 }

@@ -38,6 +38,18 @@ public class CustomerController {
     }
 
 
+    /** Frontend login. Body: {"email": "...", "password": "..."} */
+    @PostMapping("/login")
+    public ResponseEntity<CustomerResponse> login(@RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(customer_service.login(body.get("email"), body.get("password")));
+    }
+
+    /** Look up a recipient by email before sending money: /lookup?email=someone@gmail.com */
+    @GetMapping("/lookup")
+    public ResponseEntity<CustomerResponse> lookup(@RequestParam String email) {
+        return ResponseEntity.ok(customer_service.lookupByEmail(email));
+    }
+
     @GetMapping("/{externalId}")
     public ResponseEntity<CustomerResponse>getCustomer(@PathVariable String externalId)
       {

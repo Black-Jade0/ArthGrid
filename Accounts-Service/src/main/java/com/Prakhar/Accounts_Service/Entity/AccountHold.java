@@ -29,6 +29,8 @@ public class AccountHold {
 
     private String referenceId;
 
+    private String description;   // e.g. "Sent to Ravi Kumar" - copied into the statement on capture
+
 
     private String status;
 

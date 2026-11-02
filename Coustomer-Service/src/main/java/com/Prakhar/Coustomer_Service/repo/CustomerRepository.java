@@ -13,6 +13,7 @@ public interface CustomerRepository extends JpaRepository<Customer,Long> {
     boolean existsByEmail(String email);
     boolean existsByExternalId(String externalId);
     Optional<Customer> findByExternalId(String externalId);
+    Optional<Customer> findByEmailIgnoreCase(String email);
     // 3. External ID se customer dhundo (Login ya Details dekhne ke liye)
     // Optional isliye kyuki ho sakta hai customer mile hi na
 }

@@ -33,6 +33,10 @@ public class AccountService {
 
     private final AccountHoldRepository accountHoldRepository;
 
+    // Demo money every new account starts with (application.properties: app.opening-balance, default 5000)
+    @org.springframework.beans.factory.annotation.Value("${app.opening-balance:5000}")
+    private BigDecimal openingBalance;
+
     @Transactional
     public AccountResponse createAccount(CreateAccountRequest accountRequest)
     {
@@ -41,12 +45,23 @@ public class AccountService {
         Account account=Account.builder()  // creating account object
                 .customerExternalId(accountRequest.getCustomerExternalId())
                 .accountNumber(accountNumber)
-                .currentBalance(BigDecimal.ZERO)
+                .currentBalance(openingBalance)
                 .currency(accountRequest.getCurrency())
                 .status(AccountStatus.ACTIVE)
                 .build();
 
         Account savedAccount= accountRepository.save(account); // saving in repository
+
+        // Write the opening balance into the statement too, so the ledger always adds up
+        if (openingBalance.compareTo(BigDecimal.ZERO) > 0) {
+            transactionRepository.save(AccountTransaction.builder()
+                    .accountNumber(accountNumber)
+                    .amount(openingBalance)
+                    .transactionType("Opening_Balance")
+                    .referenceId(UUID.randomUUID().toString())
+                    .description("Welcome bonus (opening balance)")
+                    .build());
+        }
 
         return mapToResponse(savedAccount);  // returning the dto response
     }
@@ -73,6 +88,15 @@ public class AccountService {
     @Transactional
     public AccountResponse deposit(String accountNumber,BigDecimal amount)
     {
+        return deposit(accountNumber, amount, null);
+    }
+
+    @Transactional
+    public AccountResponse deposit(String accountNumber,BigDecimal amount,String description)
+    {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Amount must be more than 0");
+        }
         Account account= accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(()->new RuntimeException("Account does not Exist"));
 
@@ -84,7 +108,7 @@ public class AccountService {
                 .amount(amount)
                 .transactionType("Deposit")
                 .referenceId(UUID.randomUUID().toString())
-                .description("Cash Deposit")
+                .description(description != null && !description.isBlank() ? description : "Cash Deposit")
                 .build();
 
         transactionRepository.save(accountTransaction);
@@ -156,6 +180,9 @@ public class AccountService {
 
     @Transactional
     public AccountResponse createHold(HoldRequest holdRequest) {
+        if (holdRequest.getAmount() == null || holdRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Amount must be more than 0");
+        }
         Account account = accountRepository.findByAccountNumber(holdRequest.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Account does not Exist"));
 
@@ -172,6 +199,7 @@ public class AccountService {
                 .amount(holdRequest.getAmount())
                 .status("Active")
                 .referenceId(holdRequest.getReferenceId())
+                .description(holdRequest.getDescription())
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .build();
@@ -216,7 +244,7 @@ public class AccountService {
                   .amount(hold.getAmount().negate())
                   .transactionType("Withdrawal_Held") // pta chle ye hold wala settelemnt tha
                   .referenceId(holdReferenceId)
-                  .description("Hold Captured"+holdReferenceId)
+                  .description(hold.getDescription() != null ? hold.getDescription() : "Hold Captured"+holdReferenceId)
                   .build();
 
           transactionRepository.save(transaction);

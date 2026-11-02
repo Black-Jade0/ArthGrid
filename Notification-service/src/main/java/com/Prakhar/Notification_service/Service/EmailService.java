@@ -13,6 +13,10 @@ public class EmailService {
     @Autowired
     private JavaMailSender javaMailSender;
 
+    // "From" address = the Gmail account you log in with (MAIL_USERNAME), unless MAIL_FROM is set
+    @org.springframework.beans.factory.annotation.Value("${app.mail.from:${spring.mail.username}}")
+    private String fromAddress;
+
     public void sendPaymentNotification(String toEmail, String subject, String body) {
 
         try {
@@ -22,7 +26,7 @@ public class EmailService {
             // 'true' means multipart/HTML is enabled
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom("prakharietdavv@gmail.com");
+            helper.setFrom(fromAddress, "ArthGrid Bank");
             helper.setTo(toEmail);
             helper.setSubject(subject);
 
@@ -45,14 +49,14 @@ public class EmailService {
                 <body>
                     <div class="container">
                         <div class="header">
-                            <div class="brand">Agrawal<span style="color: #d4af37;">Bank</span></div>
+                            <div class="brand">Arth<span style="color: #d4af37;">Grid</span></div>
                         </div>
                         <div class="content">
                             {{MESSAGE_BODY}}
                         </div>
 
                         <div class="footer">
-                            <p>&copy; 2026 Agrawal Bank Ltd. All rights reserved.</p>
+                            <p>&copy; 2026 ArthGrid. College demo project.</p>
                             <p style="margin-top: 10px;">This is a system-generated email. Please do not reply.</p>
                         </div>
                     </div>
@@ -69,7 +73,7 @@ public class EmailService {
             javaMailSender.send(message);
             System.out.println("✅ Premium HTML Email Sent Successfully to " + toEmail);
         }
-        catch (MessagingException e) {
+        catch (MessagingException | java.io.UnsupportedEncodingException | org.springframework.mail.MailException e) {
             System.err.println("❌ Error sending email: " + e.getMessage());
         }
     }

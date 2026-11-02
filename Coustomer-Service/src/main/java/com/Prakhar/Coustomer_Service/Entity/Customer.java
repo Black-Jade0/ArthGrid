@@ -77,6 +77,18 @@ public class Customer {
     @Column(name="account_number")
     private String accountNumber;
 
+    // BCrypt hash of the password chosen on the frontend sign-up page (never the plain password)
+    @Column(name="password_hash")
+    private String passwordHash;
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     public Long getId() {
         return id;
     }

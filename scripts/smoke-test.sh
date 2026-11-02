@@ -33,10 +33,10 @@ ACC_B=$(json accountNumber "$B")
 [ -n "$ACC_B" ] || fail "no account number for customer B: $B"
 ok "customer B account=$ACC_B"
 
-step "3. Deposit 5000 into A"
+step "3. Deposit 5000 into A (A already has the 5000 opening balance -> 10000)"
 R=$(curl -s -X POST "$GW/accounts-service/api/v1/accounts/deposit" -H 'Content-Type: application/json' \
   -d "{\"accountNumber\":\"$ACC_A\",\"amount\":5000}")
-echo "$R"; [ "$(json currentBalance "$R")" = "5000" ] || [ "$(json currentBalance "$R")" = "5000.00" ] || fail "deposit"
+echo "$R"; [ "$(json currentBalance "$R")" = "10000" ] || [ "$(json currentBalance "$R")" = "10000.00" ] || fail "deposit"
 ok "deposited"
 
 step "4. Transfer 1000 A -> B (payment: hold -> deposit to B -> capture -> Kafka event)"
@@ -53,7 +53,7 @@ R=$(curl -s -X POST "$GW/payment-service/api/v1/payments/bill" -H 'Content-Type:
 echo "$R"; [ "$(json status "$R")" = "SUCCESS" ] || fail "bill payment"
 ok "bill paid"
 
-step "6. Balances (expect A = 3500, B = 1000)"
+step "6. Balances (expect A = 8500, B = 6000)"
 RA=$(curl -s "$GW/accounts-service/api/v1/accounts/$ACC_A"); echo "A: $RA"
 RB=$(curl -s "$GW/accounts-service/api/v1/accounts/$ACC_B"); echo "B: $RB"
 
