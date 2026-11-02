@@ -48,8 +48,8 @@ public class Customer {
     @Column(nullable = false, unique = true) // Email sabka alag hona chahiye
     private String email;
 
-    @Column(nullable = false)
-    private String phone;
+    @Column
+    private String phone;   // optional
 
     @Column(nullable = false)
     private String address;

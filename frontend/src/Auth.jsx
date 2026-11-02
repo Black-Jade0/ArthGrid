@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { api } from './api.js'
 
-const emptySignup = { firstName: '', lastName: '', email: '', phone: '', address: '', password: '' }
+const emptySignup = { firstName: '', lastName: '', email: '', address: '', password: '' }
 
 export default function Auth({ onLogin }) {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
@@ -91,11 +91,8 @@ export default function Auth({ onLogin }) {
               <label>First name<input required autoFocus {...s('firstName')} /></label>
               <label>Last name<input required {...s('lastName')} /></label>
             </div>
-            <label>Email <small>(alerts are sent here)</small><input type="email" required {...s('email')} /></label>
-            <div className="row">
-              <label>Phone<input required inputMode="tel" {...s('phone')} /></label>
-              <label>City<input required {...s('address')} /></label>
-            </div>
+            <label>Email <small>(your real email — alerts are sent here)</small><input type="email" required {...s('email')} /></label>
+            <label>City<input required {...s('address')} /></label>
             <label>Password<input type="password" required minLength={6} {...s('password')} /></label>
             {error && <div className="error">{error}</div>}
             <button className="primary" disabled={busy}>

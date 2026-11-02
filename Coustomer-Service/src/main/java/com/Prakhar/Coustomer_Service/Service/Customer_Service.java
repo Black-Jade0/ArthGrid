@@ -56,7 +56,8 @@ public class Customer_Service {
         newcustomer.setEmail(customerRequest.getEmail());
         newcustomer.setExternalId(customerRequest.getExternalId());
         newcustomer.setAddress(customerRequest.getAddress());
-        newcustomer.setPhone(customerRequest.getPhone());
+        // Phone is optional. Store "" instead of null so it also works on databases created before this change
+        newcustomer.setPhone(customerRequest.getPhone() == null ? "" : customerRequest.getPhone());
         newcustomer.setActive(true);
         newcustomer.setKycStatus(KycStatus.PENDING);
         newcustomer.setRequestFingerprint(fingerprint);

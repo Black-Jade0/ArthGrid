@@ -17,8 +17,7 @@ public class CustomerRequest {
     @NotBlank(message = "Email is Required")
     private String email;
 
-    @NotBlank(message = "Phone number is required")
-    private String phone;
+    private String phone;   // optional now - the frontend doesn't ask for it
 
     @NotBlank(message = "Address is required")
     private String address;

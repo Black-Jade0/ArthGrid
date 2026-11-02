@@ -11,6 +11,7 @@
 #   Mailpit (fake inbox)    http://localhost:8025   <- all emails the app "sends" land here
 #   MySQL                   localhost:3307  user: root  password: root
 #   Frontend (the website)  http://localhost:5173
+#   Database viewer         http://localhost:8091   (server mysql-db, user root, password root)
 #   Services (direct)       8081 customer, 8082 auth, 8083 accounts, 8084 payment, 8085 notification
 #
 # Local mode = no Auth0, no Aiven Kafka, no Gmail needed. See README.md.
@@ -78,6 +79,18 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     depends_on:
       - kafka
+
+  adminer:
+    # Database viewer in the browser: http://localhost:8091
+    # Login -> System: MySQL, Server: mysql-db, Username: root, Password: root
+    image: adminer:latest
+    container_name: adminer
+    ports:
+      - "8091:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql-db
+    depends_on:
+      - mysql-db
 
   mailpit:
     # Fake SMTP server + web inbox. Replaces Gmail locally.
@@ -205,7 +218,19 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
-      mailpit:
+      adminer:
+    # Database viewer in the browser: http://localhost:8091
+    # Login -> System: MySQL, Server: mysql-db, Username: root, Password: root
+    image: adminer:latest
+    container_name: adminer
+    ports:
+      - "8091:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql-db
+    depends_on:
+      - mysql-db
+
+  mailpit:
         condition: service_started
       eureka-server:
         condition: service_started
