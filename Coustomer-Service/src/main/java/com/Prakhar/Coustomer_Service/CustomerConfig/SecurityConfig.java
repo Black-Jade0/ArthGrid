@@ -46,6 +46,7 @@ public class SecurityConfig {
                         // 4. POST request for onboarding (Public)
                         .requestMatchers(HttpMethod.POST, "/api/v1/customers").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/customers/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/customers/verify-pin").permitAll()
 
                         // 5. Baaki sab authenticated
                         .anyRequest().authenticated()

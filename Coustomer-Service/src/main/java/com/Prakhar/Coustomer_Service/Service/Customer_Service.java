@@ -55,7 +55,15 @@ public class Customer_Service {
         newcustomer.setLastName(customerRequest.getLastName());
         newcustomer.setEmail(customerRequest.getEmail());
         newcustomer.setExternalId(customerRequest.getExternalId());
-        newcustomer.setAddress(customerRequest.getAddress());
+        newcustomer.setAddress(customerRequest.getAddress() == null ? "" : customerRequest.getAddress());
+        newcustomer.setDateOfBirth(blankToNull(customerRequest.getDateOfBirth()));
+        newcustomer.setCity(blankToNull(customerRequest.getCity()));
+        newcustomer.setState(blankToNull(customerRequest.getState()));
+        newcustomer.setPostalCode(blankToNull(customerRequest.getPostalCode()));
+        newcustomer.setOccupation(blankToNull(customerRequest.getOccupation()));
+        if (customerRequest.getPin() != null && !customerRequest.getPin().isBlank()) {
+            newcustomer.setPinHash(passwordEncoder.encode(customerRequest.getPin()));
+        }
         // Phone is optional. Store "" instead of null so it also works on databases created before this change
         newcustomer.setPhone(customerRequest.getPhone() == null ? "" : customerRequest.getPhone());
         newcustomer.setActive(true);
@@ -84,6 +92,12 @@ public class Customer_Service {
         customerResponse.setKycStatus(customer.getKycStatus());
         customerResponse.setActive(customer.isActive());
         customerResponse.setAccountNumber(customer.getAccountNumber());
+        customerResponse.setDateOfBirth(customer.getDateOfBirth());
+        customerResponse.setCity(customer.getCity());
+        customerResponse.setState(customer.getState());
+        customerResponse.setPostalCode(customer.getPostalCode());
+        customerResponse.setOccupation(customer.getOccupation());
+        customerResponse.setMemberSince(customer.getCreatedAt());
 
         return customerResponse;
 
@@ -110,6 +124,22 @@ public class Customer_Service {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong email or password");
         }
         return mapToResponse(customer);
+    }
+
+    /** Checks the 4-digit transaction PIN before a transfer. Throws 401 if it is wrong. */
+    public void verifyPin(String email, String pin) {
+        Customer customer = customerRepository.findByEmailIgnoreCase(email == null ? "" : email.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect PIN"));
+        if (customer.getPinHash() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This account has no transaction PIN. Open a new account to set one.");
+        }
+        if (pin == null || !passwordEncoder.matches(pin, customer.getPinHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect PIN");
+        }
+    }
+
+    private static String blankToNull(String v) {
+        return (v == null || v.isBlank()) ? null : v.trim();
     }
 
     /** Find the person you want to send money to, by their email. Returns only what the sender needs. */

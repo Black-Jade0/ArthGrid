@@ -44,6 +44,13 @@ public class CustomerController {
         return ResponseEntity.ok(customer_service.login(body.get("email"), body.get("password")));
     }
 
+    /** Transaction PIN check before a transfer. Body: {"email": "...", "pin": "1234"} */
+    @PostMapping("/verify-pin")
+    public ResponseEntity<java.util.Map<String, Boolean>> verifyPin(@RequestBody java.util.Map<String, String> body) {
+        customer_service.verifyPin(body.get("email"), body.get("pin"));
+        return ResponseEntity.ok(java.util.Map.of("valid", true));
+    }
+
     /** Look up a recipient by email before sending money: /lookup?email=someone@gmail.com */
     @GetMapping("/lookup")
     public ResponseEntity<CustomerResponse> lookup(@RequestParam String email) {

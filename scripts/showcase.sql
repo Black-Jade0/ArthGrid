@@ -2,7 +2,9 @@
 -- Run in Adminer (http://localhost:8091 -> "SQL command") or MySQL Workbench (localhost:3307, root/root).
 
 -- 1) bank_db: registered customers (real emails + their account number)
-SELECT id, first_name, last_name, email, account_number, kyc_status, created_at
+-- (password_hash and pin_hash show that passwords/PINs are stored encrypted, never as plain text)
+SELECT id, first_name, last_name, email, phone, city, state, account_number, kyc_status,
+       LEFT(password_hash, 20) AS password_hash, LEFT(pin_hash, 20) AS pin_hash, created_at
 FROM bank_db.customers ORDER BY id DESC;
 
 -- 2) account_db: every account and its current balance
@@ -18,7 +20,8 @@ SELECT reference_id, amount, status, description, created_at
 FROM account_db.accounts_holds ORDER BY created_at DESC;
 
 -- 5) payment_db: each transfer and whether it succeeded
-SELECT transaction_reference_id, source_account_number, amount, biller_name, status, reason
+SELECT transaction_reference_id, source_account_number, amount, biller_name,
+       bill_reference_number AS remark, status, reason
 FROM payment_db.bill_payments ORDER BY id DESC;
 
 -- 6) notification_db: which emails were sent, to whom

@@ -51,8 +51,8 @@ public class Customer {
     @Column
     private String phone;   // optional
 
-    @Column(nullable = false)
-    private String address;
+    @Column
+    private String address;   // optional
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -80,6 +80,17 @@ public class Customer {
     // BCrypt hash of the password chosen on the frontend sign-up page (never the plain password)
     @Column(name="password_hash")
     private String passwordHash;
+
+    // BCrypt hash of the 4-digit transaction PIN asked before every transfer
+    @Column(name="pin_hash")
+    private String pinHash;
+
+    // Optional profile details from the "Open account" form
+    private String dateOfBirth;   // yyyy-mm-dd
+    private String city;
+    private String state;
+    private String postalCode;
+    private String occupation;
 
     public String getPasswordHash() {
         return passwordHash;
@@ -199,5 +210,53 @@ public class Customer {
 
     public void setAccountNumber(String accountNumber) {
         this.accountNumber = accountNumber;
+    }
+
+    public String getPinHash() {
+        return pinHash;
+    }
+
+    public void setPinHash(String pinHash) {
+        this.pinHash = pinHash;
+    }
+
+    public String getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public String getOccupation() {
+        return occupation;
+    }
+
+    public void setOccupation(String occupation) {
+        this.occupation = occupation;
     }
 }

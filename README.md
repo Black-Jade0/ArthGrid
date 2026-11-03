@@ -23,12 +23,14 @@ other over HTTP and Kafka, with MySQL for storage.
 1. **Real emails (optional):** copy `.env.example` to `.env` and put in a Gmail address + a Gmail **App Password**.
    Without `.env`, emails go to the fake inbox at http://localhost:8025.
 2. `docker compose up --build`
-3. Open **http://localhost:5173** → *Create account* → you start with **₹5,000** (demo money, only numbers in MySQL).
+3. Open **http://localhost:5173** → *Open an account* (4 steps: details, contact, password + 4-digit transaction PIN, review)
+   → you start with **₹5,000** (demo money, only numbers in MySQL).
 4. Open a second tab (each tab keeps its own login), create a second user, and send money between them by email.
    Both people get an email (debit + credit alert); the receiver's balance updates within 5 seconds.
 
-New endpoints used by the frontend: `POST /customer-service/api/v1/customers/login` `{email, password}` and
-`GET /customer-service/api/v1/customers/lookup?email=...`. Frontend code: `frontend/` (React + Vite).
+New endpoints used by the frontend: `POST /customer-service/api/v1/customers/login` `{email, password}`,
+`POST /customer-service/api/v1/customers/verify-pin` `{email, pin}` and `GET /customer-service/api/v1/customers/lookup?email=...`.
+Net banking pages: Overview, Send money (PIN required), Statement, Profile. Auto-logout after 5 minutes idle. Frontend code: `frontend/` (React + Vite).
 To run the frontend outside Docker: `cd frontend && npm install && npm run dev`.
 
 ---

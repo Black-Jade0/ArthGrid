@@ -26,6 +26,13 @@ public class CustomerResponse {
 
     private String accountNumber;
 
+    private String dateOfBirth;
+    private String city;
+    private String state;
+    private String postalCode;
+    private String occupation;
+    private java.time.LocalDateTime memberSince;
+
     public Long getId() {
         return id;
     }
@@ -104,5 +111,53 @@ public class CustomerResponse {
 
     public void setAccountNumber(String accountNumber) {
         this.accountNumber = accountNumber;
+    }
+
+    public String getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public String getOccupation() {
+        return occupation;
+    }
+
+    public void setOccupation(String occupation) {
+        this.occupation = occupation;
+    }
+
+    public java.time.LocalDateTime getMemberSince() {
+        return memberSince;
+    }
+
+    public void setMemberSince(java.time.LocalDateTime memberSince) {
+        this.memberSince = memberSince;
     }
 }

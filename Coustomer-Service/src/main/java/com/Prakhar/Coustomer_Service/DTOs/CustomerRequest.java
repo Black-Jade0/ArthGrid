@@ -3,6 +3,7 @@ package com.Prakhar.Coustomer_Service.DTOs;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 
 public class CustomerRequest {
@@ -19,8 +20,7 @@ public class CustomerRequest {
 
     private String phone;   // optional now - the frontend doesn't ask for it
 
-    @NotBlank(message = "Address is required")
-    private String address;
+    private String address;   // optional
 
     @NotBlank(message = "External ID is required")
     private String externalId;
@@ -28,6 +28,16 @@ public class CustomerRequest {
     // Optional so old clients (Postman, smoke test) still work. The frontend always sends it.
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+
+    // 4-digit transaction PIN (optional for old clients; the website always sends it)
+    @Pattern(regexp = "\\d{4}", message = "PIN must be exactly 4 digits")
+    private String pin;
+
+    private String dateOfBirth;
+    private String city;
+    private String state;
+    private String postalCode;
+    private String occupation;
 
     public String getPassword() {
         return password;
@@ -86,4 +96,52 @@ public class CustomerRequest {
     }
 
 
+
+    public String getPin() {
+        return pin;
+    }
+
+    public void setPin(String pin) {
+        this.pin = pin;
+    }
+
+    public String getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public String getOccupation() {
+        return occupation;
+    }
+
+    public void setOccupation(String occupation) {
+        this.occupation = occupation;
+    }
 }
