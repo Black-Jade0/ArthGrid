@@ -136,7 +136,7 @@ services:
     environment:
       <<: *spring-env
       KAFKA_URL: kafka:29092
-      FRONTEND_URL: http://localhost:5173/   # link in the welcome email
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173/}   # link in the welcome email (set in .env to your Vercel URL)
       # AUTH0_CLIENT_SECRET is intentionally NOT set -> local mode (no Auth0)
     depends_on:
       - eureka-server

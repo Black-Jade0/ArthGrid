@@ -1,6 +1,18 @@
 // All calls go to the API Gateway, which forwards them to the right microservice.
-// Change with a VITE_API_URL env var if your gateway runs somewhere else.
-const API = import.meta.env.VITE_API_URL || 'http://localhost:9090'
+// Where the gateway is, in order of priority:
+//   1. ?api=https://something.trycloudflare.com in the page URL (saved in this browser for next time)
+//   2. VITE_API_URL set when building (e.g. in Vercel's environment variables)
+//   3. http://localhost:9090 (backend running on this same computer)
+function resolveApi() {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('api')
+    if (fromUrl) localStorage.setItem('arthgrid-api', fromUrl.replace(/\/+$/, ''))
+    const saved = localStorage.getItem('arthgrid-api')
+    if (saved) return saved
+  } catch { /* storage blocked: fall through */ }
+  return import.meta.env.VITE_API_URL || 'http://localhost:9090'
+}
+const API = resolveApi()
 
 async function call(path, options = {}) {
   let res
